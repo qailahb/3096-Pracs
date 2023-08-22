@@ -54,7 +54,7 @@ TIM_HandleTypeDef htim16;
 /* USER CODE BEGIN PV */
 // TODO: Define any input variables
 static uint8_t patterns[] = {10101010, 01010101, 11001100, 00110011, 11110000, 00001111};
-
+static uint16_t addresses[] = {0, 1, 2, 3, 4, 5};
 
 /* USER CODE END PV */
 
@@ -105,10 +105,16 @@ int main(void)
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
-  // TODO: Start timer TIM16
+  // TODO: Start timer TIM16 (done)
+  HAL_TIM_Base_Start_IT(&htim16);
 
 
-  // TODO: Write all "patterns" to EEPROM using SPI
+  // TODO: Write all "patterns" to EEPROM using SPI (done?)
+  uint16_t a = 0;
+  for( uint16_t i = 0; i < 6; i++ )
+  	{
+	  write_to_address(a + i, patterns[i]);
+  	}
 
 
   /* USER CODE END 2 */
@@ -122,6 +128,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	// TODO: Check button PA0; if pressed, change timer delay
+	  checkPB();
+
 
   }
   /* USER CODE END 3 */
@@ -356,6 +364,8 @@ static void delay(uint32_t delay_in_us) {
   }
 }
 
+static void checkPB();
+
 // Write to EEPROM address using SPI
 static void write_to_address(uint16_t address, uint8_t data) {
 
@@ -423,13 +433,27 @@ static uint8_t read_from_address(uint16_t address) {
 	return dummy;								              // Return read data
 }
 
+unint16_t x = 0;
 // Timer rolled over
 void TIM16_IRQHandler(void)
 {
 	// Acknowledge interrupt
 	HAL_TIM_IRQHandler(&htim16);
 
-	// TODO: Change to next LED pattern; output 0x01 if the read SPI data is incorrect
+	// TODO: Change to next LED pattern; output 0x01 if the read SPI data is incorrect (done?)
+	if (read_from_address(addresses[x]) == patterns[x]) {
+		if (x<5) {
+			GPIOB -> ODR |= read_from_address(addresses[x]);
+			x++;
+		}
+		else if (x==5) {
+			GPIOB -> ODR |= read_from_address(addresses[x]);
+			x = 0;
+			}
+		}
+	else { //SPI failure
+		GPIOB -> ODR |= 0b00000001;
+	}
 
 }
 
