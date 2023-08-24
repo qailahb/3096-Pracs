@@ -34,7 +34,7 @@
 /* USER CODE BEGIN PD */
 
 // Definitions for SPI usage
-#define MEM_SIZE 8192 // bytes
+#define MEM_SIZE 8192 	// bytes
 #define WREN 0b00000110 // enable writing
 #define WRDI 0b00000100 // disable writing
 #define RDSR 0b00000101 // read status register
@@ -52,10 +52,14 @@
 TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN PV */
+
 // TODO: Define any input variables
-static uint8_t patterns[] = {0b10101010, 0b01010101, 0b11001100, 0b00110011, 0b11110000, 0b00001111};
-static uint16_t addresses[] = {0, 1, 2, 3, 4, 5};
+static uint8_t patterns[] = {0b10101010, 0b01010101, 0b11001100, 0b00110011, 0b11110000, 0b00001111}; 	// Array of 8-bit integers
+static uint16_t addresses[] = {0, 1, 2, 3, 4, 5}; 														// Array of integer addresses
 uint8_t buttonPushed = 0;
+uint16_t a = 0;
+uint16_t x = 0;
+uint16_t g = 0;
 
 /* USER CODE END PV */
 
@@ -106,20 +110,17 @@ int main(void)
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
-  // TODO: Start timer TIM16 (done)
-  HAL_TIM_Base_Start_IT(&htim16);
+
+  // TODO: Start timer TIM16
+  HAL_TIM_Base_Start_IT(&htim16); 				// Starts TIM16 process in interrupt mode
 
 
-  // TODO: Write all "patterns" to EEPROM using SPI (done?)
-  uint16_t a = 0;
-  for( uint16_t i = 0; i < 6; i++ )
+  // TODO: Write all "patterns" to EEPROM using SPI
+  for (uint16_t i = 0; i < 6; i++) 				// For loop running through array of binary values
   	{
-	  write_to_address(a + i, patterns[i]);
+	  write_to_address(a + i, patterns[i]); 	// Writes to EEPROM
   	}
 
-  // Added Code
-//  uint8_t quickDelay = 0;  // State of delay
-//  uint8_t buttonPushed = 0; // State of button
 
   /* USER CODE END 2 */
 
@@ -134,31 +135,14 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	// TODO: Check button PA0; if pressed, change timer delay
-	//checkPB();
+	checkPB();
 
-	// Checks button PA0 to see if pressed
-//	if (LL_GPIO_IsInputPinSet(Button0_GPIO_Port, Button0_Pin)) {
-//		buttonPushed = 1;
-//	}
-//	else {
-//		buttonPushed = 0;
-//	}
-	//	// Changes timer delay based on button state
-//	// Changes timer delay based on button state
-//	if (quickDelay) {
-//		htim16.Instance->ARR = 500;  // Half-second delay
-//	}
-//	else {
-//		htim16.Instance->ARR = 1000; // Full-second delay
-//	}
-checkPB();
 	if (buttonPushed == 1) {
 			htim16.Instance->ARR = 500;  // Half-second delay
 	  	}
 	else {
 	  		htim16.Instance->ARR = 1000; // Full-second delay
 	  	}
-
   }
   /* USER CODE END 3 */
 }
@@ -167,6 +151,7 @@ checkPB();
   * @brief System Clock Configuration
   * @retval None
   */
+
 void SystemClock_Config(void)
 {
   LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
@@ -204,6 +189,7 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
+
 static void MX_TIM16_Init(void)
 {
 
@@ -214,6 +200,7 @@ static void MX_TIM16_Init(void)
   /* USER CODE BEGIN TIM16_Init 1 */
 
   /* USER CODE END TIM16_Init 1 */
+
   htim16.Instance = TIM16;
   htim16.Init.Prescaler = 8000-1;
   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -236,6 +223,7 @@ static void MX_TIM16_Init(void)
   * @param None
   * @retval None
   */
+
 static void MX_GPIO_Init(void)
 {
   LL_EXTI_InitTypeDef EXTI_InitStruct = {0};
@@ -358,7 +346,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-// Initialise SPI
+// Initialize SPI
 static void init_spi(void) {
 
   // Clock to PB
@@ -397,15 +385,15 @@ static void delay(uint32_t delay_in_us) {
 // Write to EEPROM address using SPI
 static void write_to_address(uint16_t address, uint8_t data) {
 
-	uint8_t dummy; // Junk from the DR
+	uint8_t dummy; 								// Junk from the DR
 
 	// Set the Write Enable latch
-	GPIOB->BSRR |= GPIO_BSRR_BR_12; // Pull CS low
+	GPIOB->BSRR |= GPIO_BSRR_BR_12; 			// Pull CS low
 	delay(1);
 	*((uint8_t*)(&SPI2->DR)) = WREN;
-	while ((SPI2->SR & SPI_SR_RXNE) == 0); // Hang while RX is empty
+	while ((SPI2->SR & SPI_SR_RXNE) == 0); 		// Hang while RX is empty
 	dummy = SPI2->DR;
-	GPIOB->BSRR |= GPIO_BSRR_BS_12; // Pull CS high
+	GPIOB->BSRR |= GPIO_BSRR_BS_12; 			// Pull CS high
 	delay(5000);
 
 	// Send write instruction
@@ -425,16 +413,16 @@ static void write_to_address(uint16_t address, uint8_t data) {
 
 	// Send the data
 	*((uint8_t*)(&SPI2->DR)) = data;
-	while ((SPI2->SR & SPI_SR_RXNE) == 0); // Hang while RX is empty
+	while ((SPI2->SR & SPI_SR_RXNE) == 0); 		// Hang while RX is empty
 	dummy = SPI2->DR;
-	GPIOB->BSRR |= GPIO_BSRR_BS_12; // Pull CS high
+	GPIOB->BSRR |= GPIO_BSRR_BS_12; 			// Pull CS high
 	delay(5000);
 }
 
 // Read from EEPROM address using SPI
 static uint8_t read_from_address(uint16_t address) {
 
-	uint8_t dummy; // Junk from the DR
+	uint8_t dummy; 								// Junk from the DR
 
 	// Send the read instruction
 	GPIOB->BSRR |= GPIO_BSRR_BR_12; 			// Pull CS low
@@ -452,58 +440,54 @@ static uint8_t read_from_address(uint16_t address) {
 	dummy = SPI2->DR;
 
 	// Clock in the data
-	*((uint8_t*)(&SPI2->DR)) = 0x42; 			    // Clock out some junk data
+	*((uint8_t*)(&SPI2->DR)) = 0x42; 			// Clock out some junk data
 	while ((SPI2->SR & SPI_SR_RXNE) == 0); 		// Hang while RX is empty
 	dummy = SPI2->DR;
-	GPIOB->BSRR |= GPIO_BSRR_BS_12; 			    // Pull CS high
+	GPIOB->BSRR |= GPIO_BSRR_BS_12; 			// Pull CS high
 	delay(5000);
 
-	return dummy;								              // Return read data
+	return dummy;								// Return read data
 }
 
-uint16_t x = 0;
 // Timer rolled over
-void TIM16_IRQHandler(void)
-{
+void TIM16_IRQHandler(void) {
+
 	// Acknowledge interrupt
 	HAL_TIM_IRQHandler(&htim16);
 
-	// TODO: Change to next LED pattern; output 0x01 if the read SPI data is incorrect (done?)
-	if (read_from_address(addresses[x]) == patterns[x]) {
+	// TODO: Change to next LED pattern; output 0x01 if the read SPI data is incorrect
+
+	if (read_from_address(addresses[x]) == patterns[x]) { 		// Checks whether value read from EEPROM corresponds to correct value in array
+
 		if (x<5) {
-			GPIOB -> ODR |= read_from_address(addresses[x]);
-			GPIOB -> ODR &= read_from_address(addresses[x]);
-			x++;
+			GPIOB -> ODR |= read_from_address(addresses[x]); 	// Sets bits in ODR (to control output state of corresponding GPIO pins)
+			GPIOB -> ODR &= read_from_address(addresses[x]); 	// Clears bits in ODR
+			x++; 												// Implemented logic to cycle to next binary value every interrupt
 		}
 		else if (x==5) {
 			GPIOB -> ODR |= read_from_address(addresses[x]);
 			GPIOB -> ODR &= read_from_address(addresses[x]);
-			x = 0;
+			x = 0; 												// Restarts cycle of binary values
 			}
 		}
-	else { //SPI failure
-		GPIOB -> ODR |= 0b00000001;
+
+	else {														// Value read from EEPROM does not correspond to correct value in array
+		GPIOB -> ODR |= 0b00000001; 							// Indicates SPI failure
 	}
-//	if (read_from_address(addresses[x]) == patterns[x]) {
-//		for (x=0; x<5; x++) {
-//			GPIOB -> ODR |= read_from_address(addresses[x]);
-//			}
-//	}
-//	else { //SPI failure
-//		GPIOB -> ODR |= 0b00000001;
-//
-//}
 }
-uint16_t g = 0;
-void checkPB(void){
-	  if ((GPIOA -> IDR & GPIO_IDR_0) == 0) {
-		  if (g==0){
-		  buttonPushed = 1;
-		  g++;
+
+// Checks state of pushbutton
+// Checks whether pushed or released, toggles two states using variable g
+void checkPB(void) {
+	  if ((GPIOA -> IDR & GPIO_IDR_0) == 0) { // Button pushed
+
+		  if (g == 0) { 		// Button currently pushed
+			buttonPushed = 1;
+			g++; 				// Changes state so next time the next case will be executed
 		  }
-		  else if (g==1){
-			buttonPushed=0;
-			g--;
+		  else if (g == 1) { 	// Button previously pushed
+			buttonPushed = 0; 	// Button released
+			g--; 				// Changes state so next time the previous case will be executed
 		  }
 	  }
 }
@@ -520,8 +504,7 @@ void Error_Handler(void)
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
-  {
-  }
+  {}
   /* USER CODE END Error_Handler_Debug */
 }
 
