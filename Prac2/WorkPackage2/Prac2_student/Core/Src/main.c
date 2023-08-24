@@ -55,6 +55,7 @@ TIM_HandleTypeDef htim16;
 // TODO: Define any input variables
 static uint8_t patterns[] = {0b10101010, 0b01010101, 0b11001100, 0b00110011, 0b11110000, 0b00001111};
 static uint16_t addresses[] = {0, 1, 2, 3, 4, 5};
+uint8_t buttonPushed = 0;
 
 /* USER CODE END PV */
 
@@ -117,14 +118,13 @@ int main(void)
   	}
 
   // Added Code
-  //uint8_t quickDelay = 0;  // State of delay
-  //uint8_t buttonPushed = 0; // State of button
+//  uint8_t quickDelay = 0;  // State of delay
+//  uint8_t buttonPushed = 0; // State of button
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
 
 
   while (1)
@@ -143,7 +143,7 @@ int main(void)
 //	else {
 //		buttonPushed = 0;
 //	}
-//
+	//	// Changes timer delay based on button state
 //	// Changes timer delay based on button state
 //	if (quickDelay) {
 //		htim16.Instance->ARR = 500;  // Half-second delay
@@ -151,7 +151,13 @@ int main(void)
 //	else {
 //		htim16.Instance->ARR = 1000; // Full-second delay
 //	}
-
+checkPB();
+	if (buttonPushed == 1) {
+			htim16.Instance->ARR = 500;  // Half-second delay
+	  	}
+	else {
+	  		htim16.Instance->ARR = 1000; // Full-second delay
+	  	}
 
   }
   /* USER CODE END 3 */
@@ -215,6 +221,7 @@ static void MX_TIM16_Init(void)
   htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim16.Init.RepetitionCounter = 0;
   htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+
   if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
   {
     Error_Handler();
@@ -222,7 +229,6 @@ static void MX_TIM16_Init(void)
   /* USER CODE BEGIN TIM16_Init 2 */
   NVIC_EnableIRQ(TIM16_IRQn);
   /* USER CODE END TIM16_Init 2 */
-
 }
 
 /**
@@ -466,18 +472,40 @@ void TIM16_IRQHandler(void)
 	if (read_from_address(addresses[x]) == patterns[x]) {
 		if (x<5) {
 			GPIOB -> ODR |= read_from_address(addresses[x]);
-			GPIOB -> ODR = 0;
+			GPIOB -> ODR &= read_from_address(addresses[x]);
 			x++;
 		}
 		else if (x==5) {
 			GPIOB -> ODR |= read_from_address(addresses[x]);
+			GPIOB -> ODR &= read_from_address(addresses[x]);
 			x = 0;
 			}
 		}
 	else { //SPI failure
 		GPIOB -> ODR |= 0b00000001;
 	}
-
+//	if (read_from_address(addresses[x]) == patterns[x]) {
+//		for (x=0; x<5; x++) {
+//			GPIOB -> ODR |= read_from_address(addresses[x]);
+//			}
+//	}
+//	else { //SPI failure
+//		GPIOB -> ODR |= 0b00000001;
+//
+//}
+}
+uint16_t g = 0;
+void checkPB(void){
+	  if ((GPIOA -> IDR & GPIO_IDR_0) == 0) {
+		  if (g==0){
+		  buttonPushed = 1;
+		  g++;
+		  }
+		  else if (g==1){
+			buttonPushed=0;
+			g--;
+		  }
+	  }
 }
 
 /* USER CODE END 4 */
