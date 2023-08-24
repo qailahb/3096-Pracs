@@ -53,7 +53,7 @@ TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN PV */
 // TODO: Define any input variables
-static uint8_t patterns[] = {10101010, 01010101, 11001100, 00110011, 11110000, 00001111};
+static uint8_t patterns[] = {0b10101010, 0b01010101, 0b11001100, 0b00110011, 0b11110000, 0b00001111};
 static uint16_t addresses[] = {0, 1, 2, 3, 4, 5};
 
 /* USER CODE END PV */
@@ -116,15 +116,16 @@ int main(void)
 	  write_to_address(a + i, patterns[i]);
   	}
 
+  // Added Code
+  //uint8_t quickDelay = 0;  // State of delay
+  //uint8_t buttonPushed = 0; // State of button
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  // Added Code
-  uint8_t quickDelay = 0;  // State of delay
-  uint8_t buttonPushed = 0; // State of button
+
 
   while (1)
   {
@@ -133,23 +134,23 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	// TODO: Check button PA0; if pressed, change timer delay
-	// checkPB();
+	//checkPB();
 
 	// Checks button PA0 to see if pressed
-	if (LL_GPIO_IsInputPinSet(Button0_GPIO_Port, Button0_Pin)) {
-		buttonPushed = 1;
-	}
-	else {
-		buttonPushed = 0;
-	}
-
-	// Changes timer delay based on button state
-	if (quickDelay) {
-		htim16.Instance->ARR = 500;  // Half-second delay
-	}
-	else {
-		htim16.Instance->ARR = 1000; // Full-second delay
-	}
+//	if (LL_GPIO_IsInputPinSet(Button0_GPIO_Port, Button0_Pin)) {
+//		buttonPushed = 1;
+//	}
+//	else {
+//		buttonPushed = 0;
+//	}
+//
+//	// Changes timer delay based on button state
+//	if (quickDelay) {
+//		htim16.Instance->ARR = 500;  // Half-second delay
+//	}
+//	else {
+//		htim16.Instance->ARR = 1000; // Full-second delay
+//	}
 
 
   }
@@ -385,7 +386,7 @@ static void delay(uint32_t delay_in_us) {
   }
 }
 
-static void checkPB();
+//static void checkPB();
 
 // Write to EEPROM address using SPI
 static void write_to_address(uint16_t address, uint8_t data) {
@@ -454,7 +455,7 @@ static uint8_t read_from_address(uint16_t address) {
 	return dummy;								              // Return read data
 }
 
-unint16_t x = 0;
+uint16_t x = 0;
 // Timer rolled over
 void TIM16_IRQHandler(void)
 {
@@ -465,6 +466,7 @@ void TIM16_IRQHandler(void)
 	if (read_from_address(addresses[x]) == patterns[x]) {
 		if (x<5) {
 			GPIOB -> ODR |= read_from_address(addresses[x]);
+			GPIOB -> ODR = 0;
 			x++;
 		}
 		else if (x==5) {
