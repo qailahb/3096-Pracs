@@ -339,10 +339,33 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
+uint16_t g = 0;
+uint16_t buttonPushed = 0;
+uint16_t x = 500;
 /* USER CODE BEGIN 4 */
 void EXTI0_1_IRQHandler(void)
 {
 	// TODO: Add code to switch LED7 delay frequency
+	//  if ((GPIOA -> IDR & GPIO_IDR_0) == 0) { // Button pushed
+
+		  if (g == 0) { 		// Button currently pushed
+			buttonPushed = 1;
+			g++; 				// Changes state so next time the next case will be executed
+		  }
+		  else if (g == 1) { 	// Button previously pushed
+			buttonPushed = 0; 	// Button released
+			g--; 				// Changes state so next time the previous case will be executed
+		  }
+
+
+	if (buttonPushed == 1) {
+		//	htim3.Instance->ARR = 500;  // Half-second delay
+			delay_t = 250;
+	  	}
+	else {
+	  		//htim3.Instance->ARR = 1000; // Full-second delay
+			delay_t = 500;
+	  	}
 	
   
 	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
