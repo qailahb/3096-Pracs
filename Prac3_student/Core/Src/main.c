@@ -339,36 +339,70 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
-uint16_t g = 0;
+//uint16_t g = 0;
+
 uint16_t buttonPushed = 0;
+uint32_t debounceDelay = 50;
+uint32_t lastTick = 0;
+//uint32_t tick = HAL_GetTick();
 uint16_t x = 500;
+
 /* USER CODE BEGIN 4 */
+
 void EXTI0_1_IRQHandler(void)
 {
 	// TODO: Add code to switch LED7 delay frequency
+
+	// not sure if the following two lines are necessary
+	if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0)) {
+
+		LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);			// Clears interrupt flag
+
+		uint32_t tick = HAL_GetTick();					// Debouncing
+
+		if (tick - lastTick > debounceDelay) {			// Check time between last and present button press
+
+			// Toggles LED states
+			if (buttonPushed == 0) {
+				delay_t = 250;
+				buttonPushed = 1;
+			}
+			else {
+				delay_t = 500;
+				buttonPushed = 0;
+			}
+
+			lastTick = tick;
+
+		}
+
+	}
+
+	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
+
+
+
 	//  if ((GPIOA -> IDR & GPIO_IDR_0) == 0) { // Button pushed
 
-		  if (g == 0) { 		// Button currently pushed
-			buttonPushed = 1;
-			g++; 				// Changes state so next time the next case will be executed
-		  }
-		  else if (g == 1) { 	// Button previously pushed
-			buttonPushed = 0; 	// Button released
-			g--; 				// Changes state so next time the previous case will be executed
-		  }
+	//	  if (g == 0) { 		// Button currently pushed
+	//		buttonPushed = 1;
+	//		g++; 				// Changes state so next time the next case will be executed
+	//	  }
+	//	  else if (g == 1) { 	// Button previously pushed
+	//		buttonPushed = 0; 	// Button released
+	//		g--; 				// Changes state so next time the previous case will be executed
+	//	  }
 
 
-	if (buttonPushed == 1) {
+//	if (buttonPushed == 1) {
 		//	htim3.Instance->ARR = 500;  // Half-second delay
-			delay_t = 250;
-	  	}
-	else {
-	  		//htim3.Instance->ARR = 1000; // Full-second delay
-			delay_t = 500;
-	  	}
+//			delay_t = 250;
+//	  	}
+//	else {
+//	  		//htim3.Instance->ARR = 1000; // Full-second delay
+//			delay_t = 500;
+//	  	}
 	
-  
-	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
 }
 
 // TODO: Complete the writeLCD function
@@ -376,20 +410,37 @@ void writeLCD(char *char_in){
     delay(3000);
 	lcd_command(CLEAR);
 
+	char adcText[10];		// Holds text
+
+	printf(adcText, size0f(adcText), "ADC Value: %i", adcVal); // not sure what type the ADC value must be
+
+	lcd_display_text(adcText);		// Displays text on screen
+
 }
 
 // Get ADC value
 uint32_t pollADC(void){
   // TODO: Complete function body to get ADC val
 
-	return val;
+	uint32_t adcVal = 0;
+
+	HAL_ADC_Start(&hadc);								// Starts ADC conversion
+
+	HAL_ADC_PollForConversion(&hadc, HAL_MAX_DELAY);	// Waits for process to complete
+
+	adcVal = HAL_ADC_GetValue(&hadc);					// Reads ADC value
+
+	HAL_ADC_Stop(&hadc);								// Stops ADC conversion
+
+	return adcVal;
+
 }
 
 // Calculate PWM CCR value
 uint32_t ADCtoCCR(uint32_t adc_val){
   // TODO: Calculate CCR val using an appropriate equation
 
-	return val;
+	//return val;
 }
 
 void ADC1_COMP_IRQHandler(void)
