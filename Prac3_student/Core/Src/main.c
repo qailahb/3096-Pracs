@@ -74,6 +74,9 @@ uint32_t ADCtoCCR(uint32_t adc_val);
   * @brief  The application entry point.
   * @retval int
   */
+uint32_t val ;
+char buffer[10];
+uint32_t ccr;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -114,11 +117,17 @@ int main(void)
 	HAL_GPIO_TogglePin(GPIOB, LED7_Pin);
 
 	// ADC to LCD; TODO: Read POT1 value and write to LCD
+	val = pollADC();
+
+	snprintf(buffer, sizeof(buffer), "%u", val);
+	writeLCD(buffer);
 
 
 	// Update PWM value; TODO: Get CRR
 
 	__HAL_TIM_SetCompare(&htim3, TIM_CHANNEL_3, CCR);
+	ccr = ADCtoCCR(val);
+	TIM3 -> CCR3 = ccr;
 
 	// Wait for delay ms
 	HAL_Delay (delay_t);
@@ -373,7 +382,6 @@ void EXTI0_1_IRQHandler(void)
 			}
 
 			lastTick = tick;
-
 		}
 
 	}
@@ -410,12 +418,13 @@ void writeLCD(char *char_in){
     delay(3000);
 	lcd_command(CLEAR);
 
-	char adcText[10];		// Holds text
+	//char adcText[10];		// Holds text
 
-	printf(adcText, size0f(adcText), "ADC Value: %i", adcVal); // not sure what type the ADC value must be
+	//printf(adcText, size0f(adcText), "ADC Value: %i", adcVal); // not sure what type the ADC value must be
 
-	lcd_display_text(adcText);		// Displays text on screen
-
+	//lcd_display_text(adcText);		// Displays text on screen
+	lcd_putstring(char_in);
+	//lcd_putchar(char_in);
 }
 
 // Get ADC value
@@ -439,8 +448,8 @@ uint32_t pollADC(void){
 // Calculate PWM CCR value
 uint32_t ADCtoCCR(uint32_t adc_val){
   // TODO: Calculate CCR val using an appropriate equation
-
-	//return val;
+	ccr = (adc_val * (47999 + 1)) / 4096;
+	return ccr;
 }
 
 void ADC1_COMP_IRQHandler(void)
