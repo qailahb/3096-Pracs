@@ -50,6 +50,7 @@ uint32_t prev_millis = 0;
 uint32_t curr_millis = 0;
 uint32_t delay_t = 500; // Initialise delay to 500ms
 uint32_t adc_val;
+//uint32_t lastTick = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -119,16 +120,16 @@ int main(void)
 	HAL_GPIO_TogglePin(GPIOB, LED7_Pin);
 
 	// ADC to LCD; TODO: Read POT1 value and write to LCD
-	val = pollADC();
+	val = pollADC();								//reads POT1 value
 
 	snprintf(buffer, sizeof(buffer), "%lu", val);	//converts uint32 ADC value to a string
-	writeLCD(buffer);	//writes the ADC value to the screen
+	writeLCD(buffer);								//writes the ADC value to the screen
 
 
 	// Update PWM value; TODO: Get CRR
 	__HAL_TIM_SetCompare(&htim3, TIM_CHANNEL_3, CCR);
 	ccr = ADCtoCCR(val);
-	TIM3 -> CCR3 = ccr;	//sets CCR value for TIM3
+	TIM3 -> CCR3 = ccr;								//sets CCR value for TIM3
 
 	// Wait for delay ms
 	HAL_Delay (delay_t);
@@ -350,8 +351,8 @@ static void MX_GPIO_Init(void)
 }
 
 uint16_t buttonPushed = 0;
-//uint32_t debounceDelay = 50;
-//uint32_t lastTick = 0;
+uint32_t debounceDelay = 50;
+uint32_t lastTick = 0;
 uint16_t x = 500;
 
 /* USER CODE BEGIN 4 */
@@ -359,30 +360,24 @@ uint16_t x = 500;
 void EXTI0_1_IRQHandler(void)
 {
 	// TODO: Add code to switch LED7 delay frequency
-	//if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0)) {
 
-	//	LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);			// Clears interrupt flag
-
-		uint32_t debounceDelay = 250;
-		uint32_t lastTick = 0;
 		uint32_t tick = HAL_GetTick();					// Debouncing
 
 		if (tick - lastTick > debounceDelay) {			// Check time between last and present button press
 
 			// Toggles LED states
 			if (buttonPushed == 0) {
-				delay_t = 250;
+				delay_t = 250;			// corresponds to 2 Hz
 				buttonPushed = 1;
 			}
 			else {
-				delay_t = 500;
+				delay_t = 500;			// corresponds to 1 Hz
 				buttonPushed = 0;
 			}
 
 			lastTick = tick;
 		}
 
-	//}
 	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
 	
 }
@@ -395,24 +390,22 @@ void writeLCD(char *char_in){
 
 // Get ADC value
 uint32_t pollADC(void){
-  // TODO: Complete function body to get ADC val
+
+  // TODO: Complete function body to get ADC value
 
 	uint32_t adcVal = 0;
 
 	HAL_ADC_Start(&hadc);								// Starts ADC conversion
-
 	HAL_ADC_PollForConversion(&hadc, HAL_MAX_DELAY);	// Waits for process to complete
-
 	adcVal = HAL_ADC_GetValue(&hadc);					// Reads ADC value
-
 	HAL_ADC_Stop(&hadc);								// Stops ADC conversion
-
 	return adcVal;
 
 }
 
 // Calculate PWM CCR value
 uint32_t ADCtoCCR(uint32_t adc_val){
+
   // TODO: Calculate CCR val using an appropriate equation
 	ccr = (adc_val * (47999 + 1)) / 4096;	//adc_val to a ccr_val
 	return ccr;
