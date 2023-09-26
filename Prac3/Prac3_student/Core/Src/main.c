@@ -121,7 +121,7 @@ int main(void)
 	// ADC to LCD; TODO: Read POT1 value and write to LCD
 	val = pollADC();
 
-	snprintf(buffer, sizeof(buffer), "%u", val);	//converts uint32 ADC value to a string
+	snprintf(buffer, sizeof(buffer), "%lu", val);	//converts uint32 ADC value to a string
 	writeLCD(buffer);	//writes the ADC value to the screen
 
 
@@ -350,8 +350,8 @@ static void MX_GPIO_Init(void)
 }
 
 uint16_t buttonPushed = 0;
-uint32_t debounceDelay = 50;
-uint32_t lastTick = 0;
+//uint32_t debounceDelay = 50;
+//uint32_t lastTick = 0;
 uint16_t x = 500;
 
 /* USER CODE BEGIN 4 */
@@ -359,10 +359,12 @@ uint16_t x = 500;
 void EXTI0_1_IRQHandler(void)
 {
 	// TODO: Add code to switch LED7 delay frequency
-	if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0)) {
+	//if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0)) {
 
-		LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);			// Clears interrupt flag
+	//	LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);			// Clears interrupt flag
 
+		uint32_t debounceDelay = 250;
+		uint32_t lastTick = 0;
 		uint32_t tick = HAL_GetTick();					// Debouncing
 
 		if (tick - lastTick > debounceDelay) {			// Check time between last and present button press
@@ -380,7 +382,7 @@ void EXTI0_1_IRQHandler(void)
 			lastTick = tick;
 		}
 
-	}
+	//}
 	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
 	
 }

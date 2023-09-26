@@ -1,0 +1,7 @@
+Task 1:
+
+Debouncing 
+- occasionally the frequency does not seem to change when the button is pressed
+
+Prevented with HAL GetTick() function
+- returns the number of milliseconds elapsed since startup
