@@ -36,7 +36,7 @@
 // TODO: Add values for below variables
 #define NS 128       // Number of samples in LUT
 #define TIM2CLK 8000000  // STM Clock frequency
-#define F_SIGNAL 100 // Frequency of output analog signal
+#define F_SIGNAL 1 // Frequency of output analog signal
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,18 +52,14 @@ DMA_HandleTypeDef hdma_tim2_ch1;
 /* USER CODE BEGIN PV */
 // TODO: Add code for global variables, including LUTs
 
-uint32_t Sin_LUT[NS] = {512, 541, 570, 598, 625, 652, 677, 702, 726, 748, 769, 789, 807, 825, 841, 856,
-		  869, 881, 892, 901, 909, 916, 922, 926, 930, 932, 933, 933, 932, 930, 927, 923,
-		  918, 913, 906, 898, 890, 881, 871, 860, 849, 837, 824, 811, 797, 783, 769, 755,
-		  740, 726, 711, 697, 683, 669, 656, 644, 631, 620, 609, 599, 590, 582, 574, 567,
-		  561, 556, 552, 549, 547, 546, 547, 548, 551, 555, 560, 566, 573, 581, 589, 598,
-		  608, 619, 630, 642, 655, 668, 682, 696, 710, 725, 740, 756, 771, 787, 803, 819,
-		  835, 851, 867, 883, 899, 914, 930, 945, 959, 974, 988, 1002, 1016, 1029, 1042,
-		  1055, 1067, 1079, 1090, 1101, 1112, 1122, 1131, 1140, 1149, 1157, 1164, 1170, 1176,
-		  1181, 1185, 1189, 1192, 1194, 1195, 1196, 1195, 1194, 1192, 1190, 1186, 1182, 1177,
-		  1172, 1166, 1159, 1151, 1143, 1134, 1125, 1115, 1104, 1093, 1081, 1069, 1056, 1043,
-		  1030, 1016, 1002, 989, 975, 961, 947, 934, 921, 909, 896, 885, 874, 864, 854, 846,
-		  837, 830, 823, 817, 811, 806, 802, 798, 795, 793, 792, 791, 792};
+uint32_t Sin_LUT[NS] = {512, 537, 562, 587, 612, 636, 661, 684, 708, 731, 753, 775, 796, 817, 837, 856,
+		 874, 891, 908, 923, 938, 951, 964, 975, 985, 994, 1002, 1009, 1014, 1018, 1022, 1023,
+		 1024, 1023, 1022, 1018, 1014, 1009, 1002, 994, 985, 975, 964, 951, 938, 923, 908, 891,
+		 874, 856, 837, 817, 796, 775, 753, 731, 708, 684, 661, 636, 612, 587, 562, 537,
+		 512, 487, 462, 437, 412, 388, 363, 340, 316, 293, 271, 249, 228, 207, 187, 168,
+		 150, 133, 116, 101, 86, 73, 60, 49, 39, 30, 22, 15, 10, 6, 2, 1, 0, 1, 2, 6, 10, 15, 22, 30,
+		 39, 49, 60, 73, 86, 101, 116, 133, 150, 168, 187, 207, 228, 249, 271, 293, 316, 340, 363, 388,
+		 412, 437, 462, 487};
 
 uint32_t saw_LUT[NS] = {0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120,
 		  128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248,
@@ -373,52 +369,58 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
-uint32_t buttonPushed = 0;
 
 /* USER CODE BEGIN 4 */
-void EXTI0_1_IRQHandler(void)
-{
-	// TODO: Debounce using HAL_GetTick()
-			uint32_t tick = HAL_GetTick();					// Debouncing
+uint32_t buttonPushed = 0;
+unsigned long debounceDelay = 200;
+uint32_t lastTick = 0;
 
-			if (tick - lastTick > debounceDelay) {			// Check time between last and present button press
+void EXTI0_1_IRQHandler(void) {
+    uint32_t tick = HAL_GetTick(); // Debouncing
 
-				// Toggles LED states
-				if (buttonPushed == 0) {
-								// increment waveform
-					buttonPushed = 1;
-				}
-				else if (buttonPushed == 1){
-								// increment waveform
-					buttonPushed = 2;
-				}
-				else if (buttonPushed == 2){
-								// increment waveform
-					buttonPushed = 3;
-				}
-				else if (buttonPushed == 3){
-								// increment waveform
-					buttonPushed = 0;
-				}
-
-				lastTick = tick;
-
-				return;
-//			}
-
-		__HAL_TIM_DISABLE_DMA(&htim2, TIM_DMA_CC1);
-		HAL_DMA_Abort_IT(&hdma_tim2_ch1);
+    if (tick - lastTick > debounceDelay) {
+        // Debounce the button press
 
 
-		HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
+        // Stop the DMA transfer
+        __HAL_TIM_DISABLE_DMA(&htim2, TIM_DMA_CC1);
+        HAL_DMA_Abort_IT(&hdma_tim2_ch1);
 
-	// TODO: Disable DMA transfer and abort IT, then start DMA in IT mode with new LUT and re-enable transfer
-	// HINT: Consider using C's "switch" function to handle LUT changes
+        // Change the source address of the DMA based on the current waveform
+        switch (buttonPushed) {
+            case 0:
+                // Switch to Sawtooth wave
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)saw_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Sawtooth");
+                buttonPushed = 1;
+                break;
+            case 1:
+                // Switch to Triangle wave
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)triangle_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Triangle");
+                buttonPushed = 2;
+                break;
+            case 2:
+            default:
+                // Switch back to Sine wave
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Sin_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Sine");
+                buttonPushed = 0;
+                break;
+        }
 
+        // Re-enable the DMA transfer
+        __HAL_TIM_ENABLE_DMA(&htim2, TIM_DMA_CC1);
 
+        lastTick = tick;
+    }
 
-	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
+    HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
 }
+
 /* USER CODE END 4 */
 
 /**
@@ -433,8 +435,9 @@ void Error_Handler(void)
   while (1)
   {
   }
-  /* USER CODE END Error_Handler_Debug */
 }
+  /* USER CODE END Error_Handler_Debug */
+
 
 #ifdef  USE_FULL_ASSERT
 /**
